@@ -1,0 +1,16 @@
+{
+  "name": "tokenflow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ứng dụng OAuth 2.0 cục bộ để đổi refresh token thành access token.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "open": "node server.js --open",
+    "test": "node --test",
+    "check": "node --check server.js && node --check src/oauth.js && node --check public/app.js && node --check public/profiles.js"
+  }
+}

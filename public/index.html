@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta
+      name="description"
+      content="Đổi refresh token thành access token qua OAuth 2.0 ngay trên máy của bạn."
+    />
+    <title>TokenFlow — Refresh → Access</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" type="module"></script>
+  </head>
+  <body>
+    <svg
+      class="svg-library"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <symbol id="i-flow" viewBox="0 0 24 24">
+        <path d="M4 7h15l-4-4m4 4-4 4M20 17H5l4 4m-4-4 4-4" />
+      </symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path d="M4 12h16m-6-6 6 6-6 6" />
+      </symbol>
+      <symbol id="i-key" viewBox="0 0 24 24">
+        <circle cx="8" cy="8" r="5" />
+        <path d="m11.5 11.5 9 9m-4-4 3-3m-6 0 3-3" />
+      </symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24">
+        <rect x="5" y="10" width="14" height="11" rx="3" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2" />
+      </symbol>
+      <symbol id="i-help" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1-1.5 2.5M12 17h.01" />
+      </symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24">
+        <rect x="8" y="8" width="12" height="13" rx="2" />
+        <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+      </symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24">
+        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+        <circle cx="12" cy="12" r="3" />
+      </symbol>
+      <symbol id="i-eye-off" viewBox="0 0 24 24">
+        <path
+          d="m3 3 18 18M10.6 5.1A12 12 0 0 1 12 5c6 0 10 7 10 7a20 20 0 0 1-3 3.5M6 6.5A23 23 0 0 0 2 12s4 7 10 7a12 12 0 0 0 5-1.2M10 10a3 3 0 0 0 4 4"
+        />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <path d="m5 12 4 4L19 6" />
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24">
+        <path d="m7 10 5 5 5-5" />
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14" />
+      </symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24">
+        <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" />
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </symbol>
+      <symbol id="i-close" viewBox="0 0 24 24">
+        <path d="m6 6 12 12M6 18 18 6" />
+      </symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24">
+        <path d="m12 3 10 18H2L12 3Zm0 6v5m0 3h.01" />
+      </symbol>
+      <symbol id="i-code" viewBox="0 0 24 24">
+        <path d="m7 7-5 5 5 5m10-10 5 5-5 5M14 4l-4 16" />
+      </symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3a19 19 0 0 1 0 18 19 19 0 0 1 0-18Z" />
+      </symbol>
+    </svg>
+
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="TokenFlow, trang chủ">
+        <span class="brand-mark"
+          ><svg><use href="#i-flow" /></svg
+        ></span>
+        <span>TokenFlow<span class="brand-period">.</span></span>
+      </a>
+      <div class="workspace-label">CÔNG CỤ CỦA BẠN</div>
+      <nav aria-label="Điều hướng chính">
+        <a class="nav-item active" href="#exchange" aria-current="page"
+          ><svg><use href="#i-flow" /></svg>Đổi token<span
+            class="nav-dot"
+          ></span
+        ></a>
+        <button class="nav-item" type="button" data-open-help>
+          <svg><use href="#i-help" /></svg>Hướng dẫn sử dụng
+        </button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="privacy-card">
+          <span class="privacy-icon"
+            ><svg><use href="#i-lock" /></svg
+          ></span>
+          <h2>Trên máy của bạn.</h2>
+          <p>
+            Token chỉ gửi đến endpoint bạn nhập và không được lưu vào file hay
+            lịch sử.
+          </p>
+          <span class="privacy-tag"><span></span> Không có telemetry</span>
+        </div>
+        <div class="sidebar-footer">
+          <span>LOCAL WORKSPACE</span><span>v1.0</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="breadcrumb">
+          Workspace <span>/</span> <strong>Token exchange</strong>
+        </div>
+        <div id="connection-status" class="local-status">
+          <span></span><span id="connection-label">Đang kết nối…</span>
+        </div>
+      </header>
+
+      <main id="exchange">
+        <section class="page-heading" aria-labelledby="page-title">
+          <div>
+            <div class="eyebrow"><span></span> OAUTH 2.0 WORKSPACE</div>
+            <h1 id="page-title">Token mới. <span>Kết nối tiếp.</span></h1>
+            <p>Đổi refresh token thành access token qua endpoint của bạn.</p>
+          </div>
+          <button
+            class="button button-subtle help-button"
+            type="button"
+            data-open-help
+          >
+            <svg><use href="#i-help" /></svg>Cách hoạt động
+          </button>
+        </section>
+
+        <div class="exchange-layout">
+          <section class="panel request-panel" aria-labelledby="request-title">
+            <div class="panel-heading">
+              <div class="panel-heading-icon">
+                <svg><use href="#i-key" /></svg>
+              </div>
+              <div>
+                <h2 id="request-title">Cấu hình yêu cầu</h2>
+                <p>Kết nối đến dịch vụ OAuth của bạn</p>
+              </div>
+              <span class="method-badge">POST</span>
+            </div>
+
+            <form id="token-form" autocomplete="off">
+              <fieldset id="request-fields">
+                <div class="field">
+                  <label for="profile">Dịch vụ</label>
+                  <div class="select-wrap">
+                    <select
+                      id="profile"
+                      name="profile"
+                      aria-describedby="profile-hint"
+                    >
+                      <option value="custom">Endpoint tùy chỉnh</option>
+                    </select>
+                    <svg><use href="#i-chevron" /></svg>
+                  </div>
+                  <p class="field-hint" id="profile-hint">
+                    Chọn dịch vụ để điền nhanh endpoint và cách xác thực.
+                  </p>
+                  <p class="field-hint">
+                    <a id="profile-docs" target="_blank" rel="noreferrer" hidden
+                      >Tài liệu OAuth của dịch vụ ↗</a
+                    >
+                  </p>
+                </div>
+
+                <div id="microsoft-tenant-field" class="field" hidden>
+                  <label for="microsoft-tenant"
+                    >Tenant Microsoft <span class="required">*</span></label
+                  >
+                  <input
+                    id="microsoft-tenant"
+                    name="tenant"
+                    value="common"
+                    placeholder="common, consumers, organizations hoặc Tenant ID"
+                    maxlength="255"
+                    pattern="[a-zA-Z0-9][a-zA-Z0-9.\-]*"
+                    spellcheck="false"
+                    autocomplete="off"
+                    aria-describedby="microsoft-tenant-hint"
+                    disabled
+                  />
+                  <p class="field-hint" id="microsoft-tenant-hint">
+                    Dùng tenant phù hợp với ứng dụng: common, consumers,
+                    organizations, Tenant ID hoặc tên miền tổ chức.
+                  </p>
+                </div>
+
+                <div class="field">
+                  <label for="endpoint"
+                    >Token endpoint <span class="required">*</span></label
+                  >
+                  <div class="input-with-icon">
+                    <svg><use href="#i-globe" /></svg
+                    ><input
+                      id="endpoint"
+                      name="endpoint"
+                      type="url"
+                      placeholder="https://auth.example.com/oauth/token"
+                      required
+                      maxlength="4096"
+                      spellcheck="false"
+                      autocomplete="off"
+                      aria-describedby="endpoint-hint"
+                    />
+                  </div>
+                  <p class="field-hint" id="endpoint-hint">
+                    URL cấp token trong tài liệu OAuth của dịch vụ.
+                  </p>
+                </div>
+
+                <div class="field">
+                  <div class="label-row">
+                    <label for="refresh-token"
+                      >Refresh token <span class="required">*</span></label
+                    ><span class="small-tag"
+                      ><svg><use href="#i-lock" /></svg>Ẩn mặc định</span
+                    >
+                  </div>
+                  <div class="secret-input">
+                    <input
+                      id="refresh-token"
+                      name="refreshToken"
+                      type="password"
+                      placeholder="Dán refresh token của bạn"
+                      required
+                      maxlength="65536"
+                      spellcheck="false"
+                      autocomplete="new-password"
+                    /><button
+                      class="icon-button reveal-button"
+                      type="button"
+                      data-reveal="refresh-token"
+                      aria-label="Hiện refresh token"
+                      aria-pressed="false"
+                    >
+                      <svg><use href="#i-eye" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="auth-method">Xác thực client</label>
+                  <div class="select-wrap">
+                    <select
+                      id="auth-method"
+                      name="authMethod"
+                      aria-describedby="auth-hint"
+                    >
+                      <option value="none">Không dùng Client Secret</option>
+                      <option value="body">Client Secret trong body</option>
+                      <option value="basic">
+                        HTTP Basic Authentication
+                      </option></select
+                    ><svg><use href="#i-chevron" /></svg>
+                  </div>
+                  <p class="field-hint" id="auth-hint">
+                    Dành cho public client hoặc dịch vụ không yêu cầu secret.
+                  </p>
+                </div>
+
+                <div class="field">
+                  <div class="label-row">
+                    <label for="client-id"
+                      >Client ID
+                      <span id="client-id-required" class="required" hidden
+                        >*</span
+                      ></label
+                    ><span id="client-id-optional" class="optional"
+                      >Tùy chọn</span
+                    >
+                  </div>
+                  <input
+                    id="client-id"
+                    name="clientId"
+                    type="text"
+                    placeholder="Nhập Client ID nếu dịch vụ yêu cầu"
+                    maxlength="4096"
+                    spellcheck="false"
+                    autocomplete="off"
+                    aria-describedby="client-id-hint"
+                  />
+                  <p class="field-hint" id="client-id-hint">
+                    Phải là Client ID của ứng dụng đã cấp refresh token, không
+                    phải ID tài khoản hay workspace.
+                  </p>
+                </div>
+
+                <div id="client-secret-field" class="field" hidden>
+                  <label for="client-secret"
+                    >Client Secret <span class="required">*</span></label
+                  >
+                  <div class="secret-input">
+                    <input
+                      id="client-secret"
+                      name="clientSecret"
+                      type="password"
+                      placeholder="Nhập Client Secret"
+                      maxlength="16384"
+                      autocomplete="new-password"
+                      spellcheck="false"
+                    /><button
+                      class="icon-button reveal-button"
+                      type="button"
+                      data-reveal="client-secret"
+                      aria-label="Hiện Client Secret"
+                      aria-pressed="false"
+                    >
+                      <svg><use href="#i-eye" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <details class="advanced-options" id="advanced-options">
+                  <summary>
+                    <span
+                      ><svg><use href="#i-code" /></svg>Tùy chọn nâng cao</span
+                    ><svg class="details-chevron">
+                      <use href="#i-chevron" />
+                    </svg>
+                  </summary>
+                  <div class="advanced-content">
+                    <div class="field">
+                      <div class="label-row">
+                        <label for="scope">Scope</label
+                        ><span class="optional">Tùy chọn</span>
+                      </div>
+                      <input
+                        id="scope"
+                        name="scope"
+                        placeholder="read write offline_access"
+                        maxlength="8192"
+                        spellcheck="false"
+                      />
+                      <p class="field-hint">
+                        Các quyền cách nhau bằng dấu cách, theo tài liệu dịch
+                        vụ.
+                      </p>
+                    </div>
+                    <div class="label-row extra-heading">
+                      <span class="field-label">Tham số bổ sung</span
+                      ><span class="optional">Tối đa 20</span>
+                    </div>
+                    <div id="extra-params"></div>
+                    <button
+                      id="add-param"
+                      class="button button-add"
+                      type="button"
+                    >
+                      <svg><use href="#i-plus" /></svg>Thêm tham số
+                    </button>
+                  </div>
+                </details>
+              </fieldset>
+
+              <div id="request-error" class="error-box" role="alert" hidden>
+                <svg><use href="#i-alert" /></svg>
+                <div>
+                  <strong id="error-title"></strong>
+                  <p id="error-detail"></p>
+                  <code id="error-code"></code>
+                  <ul id="error-suggestions" hidden></ul>
+                  <button
+                    id="fix-codex"
+                    class="button button-small"
+                    type="button"
+                    hidden
+                  >
+                    Điền cấu hình Codex
+                  </button>
+                </div>
+              </div>
+
+              <button
+                class="button button-primary"
+                id="submit-button"
+                type="submit"
+              >
+                <span id="submit-icon"
+                  ><svg><use href="#i-flow" /></svg></span
+                ><span id="submit-label">Lấy access token</span
+                ><svg class="submit-arrow"><use href="#i-arrow" /></svg>
+              </button>
+              <p class="form-footnote">
+                <svg><use href="#i-lock" /></svg>Gửi qua máy chủ cục bộ đến
+                endpoint bạn nhập.
+              </p>
+            </form>
+          </section>
+
+          <div class="result-column">
+            <section class="panel result-panel" aria-labelledby="result-title">
+              <div class="panel-heading result-heading">
+                <div>
+                  <h2 id="result-title">Kết quả</h2>
+                  <p>Access token sẽ xuất hiện tại đây</p>
+                </div>
+                <span id="result-status" class="result-status">Đang chờ</span>
+              </div>
+
+              <div id="empty-result" class="empty-result">
+                <div class="exchange-illustration" aria-hidden="true">
+                  <span class="orbit orbit-one"></span
+                  ><span class="orbit orbit-two"></span
+                  ><span class="illustration-dot dot-one"></span
+                  ><span class="illustration-dot dot-two"></span
+                  ><span class="token-card back"
+                    ><svg><use href="#i-key" /></svg></span
+                  ><span class="token-card front"
+                    ><svg><use href="#i-flow" /></svg
+                  ></span>
+                </div>
+                <h3>Sẵn sàng cho token mới</h3>
+                <p>
+                  Nhập endpoint và refresh token,<br />phần còn lại để TokenFlow
+                  xử lý.
+                </p>
+                <div class="flow-caption">
+                  <span>refresh_token</span><svg><use href="#i-arrow" /></svg
+                  ><span>access_token</span>
+                </div>
+              </div>
+
+              <div
+                id="loading-result"
+                class="loading-result"
+                role="status"
+                hidden
+              >
+                <div class="large-spinner"></div>
+                <h3>Đang trao đổi token…</h3>
+                <p>Đợi phản hồi từ dịch vụ của bạn.</p>
+              </div>
+
+              <div id="token-result" class="token-result" hidden>
+                <div
+                  class="result-tabs"
+                  role="tablist"
+                  aria-label="Cách hiển thị kết quả"
+                >
+                  <button
+                    id="tab-token"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="view-token"
+                    tabindex="0"
+                    class="result-tab active"
+                    type="button"
+                  >
+                    Token</button
+                  ><button
+                    id="tab-json"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="view-json"
+                    tabindex="-1"
+                    class="result-tab"
+                    type="button"
+                  >
+                    JSON</button
+                  ><span id="response-time"></span>
+                </div>
+                <div
+                  id="view-token"
+                  role="tabpanel"
+                  aria-labelledby="tab-token"
+                >
+                  <div class="token-label-row">
+                    <span class="field-label">Access token</span
+                    ><button
+                      id="toggle-access"
+                      class="icon-button"
+                      type="button"
+                      aria-label="Hiện access token"
+                      aria-pressed="false"
+                    >
+                      <svg><use href="#i-eye" /></svg>
+                    </button>
+                  </div>
+                  <pre
+                    id="access-token-value"
+                    class="token-value masked"
+                    tabindex="0"
+                    aria-label="Access token đang ẩn"
+                  >
+••••••••••••••••••••••••••••••••</pre
+                  >
+                  <button
+                    id="copy-token"
+                    type="button"
+                    class="button button-copy"
+                  >
+                    <svg><use href="#i-copy" /></svg>Sao chép access token
+                  </button>
+                  <div class="token-metadata">
+                    <div>
+                      <span>LOẠI TOKEN</span><strong id="token-type">—</strong>
+                    </div>
+                    <div>
+                      <span>THỜI HẠN</span
+                      ><strong id="token-lifetime">—</strong>
+                    </div>
+                  </div>
+                  <div id="expiry-section" class="expiry-section" hidden>
+                    <div>
+                      <span id="expiry-label">Còn hiệu lực</span
+                      ><span id="expiry-countdown"></span>
+                    </div>
+                    <progress
+                      id="expiry-progress"
+                      max="100"
+                      value="100"
+                      aria-label="Thời gian còn hiệu lực"
+                    ></progress>
+                    <p id="expiry-time"></p>
+                  </div>
+                  <div id="scope-result" class="scope-result" hidden>
+                    <span class="field-label">Scope được cấp</span>
+                    <p id="granted-scope"></p>
+                  </div>
+                  <div id="rotated-section" class="rotated-section" hidden>
+                    <div class="rotation-heading">
+                      <svg><use href="#i-flow" /></svg
+                      ><strong>Dịch vụ trả về refresh token mới</strong>
+                    </div>
+                    <p>
+                      Lưu token này nếu dịch vụ thay thế token cũ. TokenFlow
+                      không tự lưu.
+                    </p>
+                    <div class="rotation-actions">
+                      <button
+                        id="copy-refresh"
+                        class="button button-small"
+                        type="button"
+                      >
+                        <svg><use href="#i-copy" /></svg>Sao chép</button
+                      ><button
+                        id="use-refresh"
+                        class="button button-small"
+                        type="button"
+                      >
+                        Dùng cho lần tiếp theo<svg><use href="#i-arrow" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  id="view-json"
+                  role="tabpanel"
+                  aria-labelledby="tab-json"
+                  hidden
+                >
+                  <div class="json-toolbar">
+                    <span>Kết quả đã chuẩn hóa</span
+                    ><button
+                      id="toggle-json"
+                      class="button button-small"
+                      type="button"
+                      aria-pressed="false"
+                    >
+                      Hiện token</button
+                    ><button
+                      id="copy-json"
+                      class="icon-button"
+                      type="button"
+                      aria-label="Sao chép JSON đầy đủ"
+                    >
+                      <svg><use href="#i-copy" /></svg>
+                    </button>
+                  </div>
+                  <pre id="json-output" tabindex="0"></pre>
+                  <p class="json-hint">
+                    Nút sao chép lấy JSON đầy đủ, bao gồm giá trị token.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <div class="how-it-works">
+              <span class="note-icon"
+                ><svg><use href="#i-flow" /></svg
+              ></span>
+              <div>
+                <h3>Một lần trao đổi, token mới.</h3>
+                <p>
+                  App gửi <code>grant_type=refresh_token</code> đến dịch vụ.
+                  Quyền và thời hạn token do dịch vụ quyết định.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="main-footer">
+          <span
+            ><svg><use href="#i-lock" /></svg>Không lưu token · Không theo dõi
+            sử dụng</span
+          ><button id="clear-session" type="button">
+            <svg><use href="#i-trash" /></svg>Xóa dữ liệu phiên
+          </button>
+        </footer>
+      </main>
+    </div>
+
+    <dialog id="help-dialog" aria-labelledby="help-title">
+      <div class="dialog-heading">
+        <span class="dialog-icon"
+          ><svg><use href="#i-flow" /></svg></span
+        ><button
+          class="icon-button"
+          type="button"
+          id="close-help"
+          aria-label="Đóng hướng dẫn"
+        >
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <span class="eyebrow">BẮT ĐẦU VỚI TOKENFLOW</span>
+      <h2 id="help-title">Từ refresh đến access.</h2>
+      <p class="dialog-intro">
+        Bạn cần một refresh token hợp lệ và token endpoint của chính dịch vụ đã
+        cấp token.
+      </p>
+      <ol class="help-steps">
+        <li>
+          <span>01</span>
+          <div>
+            <h3>Nhập token endpoint</h3>
+            <p>
+              Lấy URL từ tài liệu OAuth của dịch vụ. App hỗ trợ HTTPS; HTTP chỉ
+              dành cho localhost.
+            </p>
+          </div>
+        </li>
+        <li>
+          <span>02</span>
+          <div>
+            <h3>Thêm thông tin xác thực</h3>
+            <p>
+              Dán refresh token. Chọn cách gửi Client Secret theo tài liệu dịch
+              vụ; thêm Client ID, scope hoặc tham số khác nếu cần.
+            </p>
+          </div>
+        </li>
+        <li>
+          <span>03</span>
+          <div>
+            <h3>Lấy và sao chép token</h3>
+            <p>
+              Bấm “Lấy access token”. Nếu có refresh token mới, hãy sao chép
+              hoặc dùng nó cho lần tiếp theo.
+            </p>
+          </div>
+        </li>
+      </ol>
+      <div class="help-note">
+        <svg><use href="#i-help" /></svg>
+        <p>
+          App dùng chuẩn OAuth 2.0, gửi form POST và đọc phản hồi JSON có trường
+          <code>access_token</code>. Token hết hạn hoặc bị thu hồi cần được cấp
+          lại tại dịch vụ.
+        </p>
+      </div>
+      <button class="button button-primary" type="button" id="got-it">
+        Bắt đầu<svg><use href="#i-arrow" /></svg>
+      </button>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+      <svg><use href="#i-check" /></svg><span id="toast-message"></span>
+    </div>
+  </body>
+</html>

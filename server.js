@@ -65,7 +65,7 @@ export function createApp({ fetchImpl = fetch, timeoutMs = 20000 } = {}) {
     try {
       const port = server.address()?.port;
       const host = request.headers.host;
-      if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(host)) {
+      if (![`127.0.0.1:${port}`, `localhost:${port}`, `[::1]:${port}`].includes(host)) {
         return json(response, 403, {
           error: {
             code: "invalid_host",

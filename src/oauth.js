@@ -99,6 +99,9 @@ export function normalizeRequest(input) {
       "Token endpoint phải dùng HTTPS. HTTP chỉ được phép với localhost.",
     );
   }
+  if (/^(169\.254\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url.hostname)) {
+    invalid("Token endpoint không được trỏ tới địa chỉ IP nội bộ hoặc link-local.");
+  }
   if (url.username || url.password || url.hash) {
     invalid(
       "Token endpoint không được chứa tài khoản, mật khẩu hoặc phần #fragment.",
